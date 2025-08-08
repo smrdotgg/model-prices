@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { ModeToggle } from "@/components/theme-toggle";
 import * as v from "valibot";
-import { List, Menu } from "lucide-react";
+import { List, Menu, Brain } from "lucide-react";
 import Sidebar from "./-components/sidebar";
 import { useState } from "react";
 
@@ -133,9 +133,10 @@ export function Page() {
 	const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
 		Object.values(provider.models).map((model) => {
 			const isMultiProvider = (modelNameCounts.get(model.name) || 0) > 1;
+			const brainPrefix = model.reasoning ? " 🧠" : "";
 			const displayName = isMultiProvider
-				? model.name + "\n(" + provider.name + ")"
-				: model.name;
+				? model.name + "\n(" + provider.name + ")" + brainPrefix
+				: model.name + brainPrefix;
 
 			return {
 				name: displayName,

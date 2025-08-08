@@ -1,6 +1,6 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Brain } from "lucide-react";
 import { Route } from "..";
 import { providerByPopularity } from "./popularity";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -85,6 +85,7 @@ export default function SideBar({ onClose }: SideBarProps) {
 											className="cursor-pointer flex items-center gap-1"
 											onClick={() => handleModelDeselect(compositeId)}
 										>
+											{model.reasoning && <Brain className="w-3 h-3" />}
 											{model.name}
 											<X className="w-3 h-3" />
 										</Badge>
@@ -173,9 +174,10 @@ export default function SideBar({ onClose }: SideBarProps) {
 																? "default"
 																: "outline"
 														}
-														className="cursor-pointer"
+														className="cursor-pointer flex items-center gap-1"
 														onClick={() => handleModelToggle(key, model.id)}
 													>
+														{model.reasoning && <Brain className="w-3 h-3" />}
 														{model.name}
 													</Badge>
 												);
