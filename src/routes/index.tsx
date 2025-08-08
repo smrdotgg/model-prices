@@ -129,7 +129,7 @@ export function Page() {
 				<ResponsiveContainer width="100%" height="100%" className={"min-h-80"}>
 					<BarChart
 						data={chartData}
-						margin={{ top: 20, right: 30, left: 60, bottom: 120 }}
+						margin={{ top: 60, right: 30, left: 60, bottom: 120 }}
 					>
 						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
 						<XAxis
@@ -146,8 +146,9 @@ export function Page() {
 						/>
 						<Tooltip content={<CustomTooltip />} />
 						<Legend
+							verticalAlign="top"
 							wrapperStyle={{
-								paddingTop: "20px",
+								paddingBottom: "20px",
 								color: "#ffffff",
 							}}
 						/>
