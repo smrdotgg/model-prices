@@ -23,10 +23,14 @@ import { useTheme } from "@/components/theme-provider";
 import { useBarGraphColors } from "./-components/use-bargarph-colors";
 import type { ProvidersConfig } from "./-components/data-type";
 
-const LoginSchema = v.object({});
+const searchSchema = v.object({
+	tokenFilter: v.optional(v.fallback(v.picklist(['both', 'input', 'output']), 'both'), 'both'),
+	selectedModels: v.optional(v.fallback(v.array(v.string()), []), []),
+});
+
 export const Route = createFileRoute("/")({
 	component: Page,
-	validateSearch: LoginSchema,
+	validateSearch: searchSchema,
 	loader: () => {
 		return fetch(
 			"https://square-bread-9f82.se-semere-tereffe.workers.dev/",
@@ -57,24 +61,24 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 export function Page() {
 	const data = Route.useLoaderData();
-	const [displayMode, setDisplayMode] = useState<string>("both");
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
 
-	const searchParams = Route.useSearch();
+	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 
-	const chartData = [
-		{ name: "gpt-4o", Input: 0.002, Output: 0.004 },
-		{ name: "gpt-4o-mini", Input: 0.001, Output: 0.002 },
-		{ name: "gpt-3.5-turbo", Input: 0.0005, Output: 0.0015 },
-		{ name: "claude-3-opus", Input: 0.003, Output: 0.006 },
-		{ name: "claude-3-sonnet", Input: 0.002, Output: 0.004 },
-		{ name: "claude-3-haiku", Input: 0.001, Output: 0.002 },
-		{ name: "mistral-large", Input: 0.0015, Output: 0.003 },
-		{ name: "mistral-medium", Input: 0.001, Output: 0.002 },
-		{ name: "mistral-small", Input: 0.0008, Output: 0.0016 },
-		{ name: "gemini-pro", Input: 0.0025, Output: 0.005 },
-	].map((e) => ({ ...e, Input: e.Input * 1000, Output: e.Output * 1000 }));
+	// Convert API data to chart format and filter by selected models
+	const allModels = Object.values(data).flatMap(provider => 
+		Object.values(provider.models).map(model => ({
+			name: model.name,
+			id: model.id,
+			Input: (model.pricing?.input || 0) * 1000000, // Convert to per million tokens
+			Output: (model.pricing?.output || 0) * 1000000,
+		}))
+	);
+
+	const chartData = selectedModels.length > 0 
+		? allModels.filter(model => selectedModels.includes(model.id))
+		: allModels.slice(0, 10); // Show top 10 if none selected
 
 	return (
 		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
@@ -108,10 +112,10 @@ export function Page() {
 								color: "#ffffff",
 							}}
 						/>
-						{(displayMode === "both" || displayMode === "input") && (
+						{(tokenFilter === "both" || tokenFilter === "input") && (
 							<Bar dataKey="Input" fill={inputColor} name="Input Cost" />
 						)}
-						{(displayMode === "both" || displayMode === "output") && (
+						{(tokenFilter === "both" || tokenFilter === "output") && (
 							<Bar dataKey="Output" fill={outputColor} name="Output Cost" />
 						)}
 					</BarChart>

@@ -4,9 +4,30 @@ import { List } from "lucide-react";
 import { Route } from "..";
 import { providerByPopularity } from "./popularity";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "@tanstack/react-router";
 
 export default function SideBar() {
 	const data = Route.useLoaderData();
+	const { tokenFilter, selectedModels } = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+
+	const handleTokenFilterChange = (filter: 'both' | 'input' | 'output') => {
+		navigate({
+			search: (prev) => ({ ...prev, tokenFilter: filter }),
+		});
+	};
+
+	const handleModelToggle = (modelId: string) => {
+		navigate({
+			search: (prev) => ({
+				...prev,
+				selectedModels: prev.selectedModels.includes(modelId)
+					? prev.selectedModels.filter(id => id !== modelId)
+					: [...prev.selectedModels, modelId]
+			}),
+		});
+	};
+
 	return (
 		<div className="flex flex-col  w-80 max-w-80 h-full max-h-full  ">
 			<ScrollArea className="h-full">
@@ -14,9 +35,27 @@ export default function SideBar() {
 				<div className="flex flex-col gap-2 border p-3 rounded ">
 					<p className="text-xs">Token Filter</p>
 					<div className="flex gap-2">
-						<Badge>Both</Badge>
-						<Badge variant={"outline"}>Input</Badge>
-						<Badge variant={"outline"}>Output</Badge>
+						<Badge 
+							variant={tokenFilter === 'both' ? 'default' : 'outline'}
+							className="cursor-pointer"
+							onClick={() => handleTokenFilterChange('both')}
+						>
+							Both
+						</Badge>
+						<Badge 
+							variant={tokenFilter === 'input' ? 'default' : 'outline'}
+							className="cursor-pointer"
+							onClick={() => handleTokenFilterChange('input')}
+						>
+							Input
+						</Badge>
+						<Badge 
+							variant={tokenFilter === 'output' ? 'default' : 'outline'}
+							className="cursor-pointer"
+							onClick={() => handleTokenFilterChange('output')}
+						>
+							Output
+						</Badge>
 					</div>
 				</div>
 
@@ -60,7 +99,12 @@ export default function SideBar() {
 									<p className="text-xs">{value.name}</p>
 									<div className="flex gap-2 flex-wrap">
 										{mostRecentModels.map((model) => (
-											<Badge key={model.id} variant={"outline"}>
+											<Badge 
+												key={model.id} 
+												variant={selectedModels.includes(model.id) ? 'default' : 'outline'}
+												className="cursor-pointer"
+												onClick={() => handleModelToggle(model.id)}
+											>
 												{model.name}
 											</Badge>
 										))}
