@@ -62,6 +62,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 	}
 	return null;
 };
+// Hardcoded list of 5 preferred providers
+const PREFERRED_PROVIDERS = [
+	"openai",
+	"anthropic",
+	"google",
+	"mistral",
+	"meta",
+];
+
 export function Page() {
 	const data = Route.useLoaderData();
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
@@ -77,15 +86,38 @@ export function Page() {
 			modelId: model.id,
 			providerId: providerId,
 			providerName: provider.name,
+			releaseDate: new Date(model.release_date),
 			Input: (model.cost?.input || 0) * 1000000, // Convert to per million tokens
 			Output: (model.cost?.output || 0) * 1000000,
 		})),
 	);
 
+	// Get fallback models: 3 most recent from each preferred provider
+	const getFallbackModels = () => {
+		const fallbackIds: string[] = [];
+
+		PREFERRED_PROVIDERS.forEach((providerId) => {
+			if (data[providerId]) {
+				const providerModels = Object.values(data[providerId].models)
+					.sort(
+						(a, b) =>
+							new Date(b.release_date).getTime() -
+							new Date(a.release_date).getTime(),
+					)
+					.slice(0, 3)
+					.map((model) => `${providerId}:${model.id}`);
+
+				fallbackIds.push(...providerModels);
+			}
+		});
+
+		return fallbackIds;
+	};
+
 	const chartData =
 		selectedModels.length > 0
 			? allModels.filter((model) => selectedModels.includes(model.id))
-			: allModels.slice(0, 10); // Show top 10 if none selected
+			: allModels.filter((model) => getFallbackModels().includes(model.id));
 
 	return (
 		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
