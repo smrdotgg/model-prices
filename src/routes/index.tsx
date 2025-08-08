@@ -24,7 +24,10 @@ import { useBarGraphColors } from "./-components/use-bargarph-colors";
 import type { ProvidersConfig } from "./-components/data-type";
 
 const searchSchema = v.object({
-	tokenFilter: v.optional(v.fallback(v.picklist(['both', 'input', 'output']), 'both'), 'both'),
+	tokenFilter: v.optional(
+		v.fallback(v.picklist(["both", "input", "output"]), "both"),
+		"both",
+	),
 	selectedModels: v.optional(v.fallback(v.array(v.string()), []), []),
 });
 
@@ -66,19 +69,23 @@ export function Page() {
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 
-	// Convert API data to chart format and filter by selected models
-	const allModels = Object.values(data).flatMap(provider => 
-		Object.values(provider.models).map(model => ({
-			name: model.name,
-			id: model.id,
-			Input: (model.pricing?.input || 0) * 1000000, // Convert to per million tokens
-			Output: (model.pricing?.output || 0) * 1000000,
-		}))
+	// Convert API data to chart format, treating each provider-model combination as separate
+	const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
+		Object.values(provider.models).map((model) => ({
+			name: `${model.name} (${provider.name})`,
+			id: `${providerId}:${model.id}`, // Composite key: provider:model
+			modelId: model.id,
+			providerId: providerId,
+			providerName: provider.name,
+			Input: (model.cost?.input || 0) * 1000000, // Convert to per million tokens
+			Output: (model.cost?.output || 0) * 1000000,
+		})),
 	);
 
-	const chartData = selectedModels.length > 0 
-		? allModels.filter(model => selectedModels.includes(model.id))
-		: allModels.slice(0, 10); // Show top 10 if none selected
+	const chartData =
+		selectedModels.length > 0
+			? allModels.filter((model) => selectedModels.includes(model.id))
+			: allModels.slice(0, 10); // Show top 10 if none selected
 
 	return (
 		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">

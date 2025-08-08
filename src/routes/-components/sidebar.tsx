@@ -17,13 +17,14 @@ export default function SideBar() {
 		});
 	};
 
-	const handleModelToggle = (modelId: string) => {
+	const handleModelToggle = (providerId: string, modelId: string) => {
+		const compositeId = `${providerId}:${modelId}`;
 		navigate({
 			search: (prev) => ({
 				...prev,
-				selectedModels: prev.selectedModels.includes(modelId)
-					? prev.selectedModels.filter(id => id !== modelId)
-					: [...prev.selectedModels, modelId]
+				selectedModels: prev.selectedModels.includes(compositeId)
+					? prev.selectedModels.filter(id => id !== compositeId)
+					: [...prev.selectedModels, compositeId]
 			}),
 		});
 	};
@@ -98,16 +99,19 @@ export default function SideBar() {
 								>
 									<p className="text-xs">{value.name}</p>
 									<div className="flex gap-2 flex-wrap">
-										{mostRecentModels.map((model) => (
-											<Badge 
-												key={model.id} 
-												variant={selectedModels.includes(model.id) ? 'default' : 'outline'}
-												className="cursor-pointer"
-												onClick={() => handleModelToggle(model.id)}
-											>
-												{model.name}
-											</Badge>
-										))}
+										{mostRecentModels.map((model) => {
+											const compositeId = `${key}:${model.id}`;
+											return (
+												<Badge 
+													key={model.id} 
+													variant={selectedModels.includes(compositeId) ? 'default' : 'outline'}
+													className="cursor-pointer"
+													onClick={() => handleModelToggle(key, model.id)}
+												>
+													{model.name}
+												</Badge>
+											);
+										})}
 										{!!remaining && (
 											<Badge variant={"secondary"}>
 												+{remaining} {remaining == 1 ? "Model" : "Models"}
