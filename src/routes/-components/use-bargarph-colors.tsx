@@ -2,8 +2,26 @@ import { useTheme } from "@/components/theme-provider";
 import { useEffect, useState } from "react";
 
 export function useBarGraphColors() {
+	const resolvedTheme = useResolvedTheme();
+
+	// Muted, professional palette with good contrast
+	const colors =
+		resolvedTheme === "dark"
+			? {
+					input: "#4f5d95", // muted indigo/blue
+					output: "#3ba7b8", // muted teal
+				}
+			: {
+					input: "#2f3b66", // deep muted blue
+					output: "#1b6b75", // deep muted teal
+				};
+
+	return colors;
+}
+
+export function useResolvedTheme() {
 	const { theme } = useTheme();
-	const [resolvedTheme, setResolvedTheme] = useState(theme);
+	const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
 
 	// Handle "system" theme by checking browser preference
 	useEffect(() => {
@@ -20,18 +38,5 @@ export function useBarGraphColors() {
 			setResolvedTheme(theme);
 		}
 	}, [theme]);
-
-	// Muted, professional palette with good contrast
-	const colors =
-		resolvedTheme === "dark"
-			? {
-					input: "#4f5d95", // muted indigo/blue
-					output: "#3ba7b8", // muted teal
-				}
-			: {
-					input: "#2f3b66", // deep muted blue
-					output: "#1b6b75", // deep muted teal
-				};
-
-	return colors;
+	return resolvedTheme;
 }

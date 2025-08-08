@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { ModeToggle } from "@/components/theme-toggle";
 import * as v from "valibot";
-import { List } from "lucide-react";
+import { List, Menu } from "lucide-react";
 import Sidebar from "./-components/sidebar";
 import { useState } from "react";
 
@@ -20,7 +20,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import logo from "../logo.svg";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { useBarGraphColors } from "./-components/use-bargarph-colors";
+import {
+	useBarGraphColors,
+	useResolvedTheme,
+} from "./-components/use-bargarph-colors";
 import type { ProvidersConfig } from "./-components/data-type";
 
 const searchSchema = v.object({
@@ -73,7 +76,9 @@ const PREFERRED_PROVIDERS = [
 
 export function Page() {
 	const data = Route.useLoaderData();
+	const resolvedTheme = useResolvedTheme();
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
+	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -149,59 +154,123 @@ export function Page() {
 	const filteredModels = allModels.filter((model) =>
 		effectiveSelectedModels.includes(model.id),
 	);
-	
+
 	const chartData = filteredModels.sort((a, b) => {
-		if (tokenFilter === 'input') {
+		if (tokenFilter === "input") {
 			return a.Input - b.Input; // Sort by input cost ascending
-		} else if (tokenFilter === 'output') {
+		} else if (tokenFilter === "output") {
 			return a.Output - b.Output; // Sort by output cost ascending
 		} else {
 			// tokenFilter === 'both' - sort by sum of input + output
-			return (a.Input + a.Output) - (b.Input + b.Output);
+			return a.Input + a.Output - (b.Input + b.Output);
 		}
 	});
 
 	return (
-		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
-			<div className="flex justify-end">
+		<div className="bg-background h-screen w-screen flex flex-col p-3">
+			{/* Header */}
+			<div className="flex justify-between  items-center mb-3 flex-shrink-0">
+				<div className="">
+					<Button
+						variant="outline"
+						size="sm"
+						className="md:hidden"
+						onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+					>
+						<Menu className="w-4 h-4" />
+					</Button>
+				</div>
+				<h1 className="text-3xl">LLM Model Price Graph</h1>
 				<ModeToggle />
 			</div>
-			<div className="flex flex-1 bg-0 h-full max-h-full ">
-				<Sidebar />
-				<ResponsiveContainer width="100%" height="100%" className={"min-h-80"}>
-					<BarChart
-						data={chartData}
-						margin={{ top: 60, right: 30, left: 60, bottom: 120 }}
-					>
-						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-						<XAxis
-							dataKey="name"
-							angle={-45}
-							textAnchor="end"
-							height={100}
-							interval={0}
-							tick={{ fill: "#ffffff" }}
-						/>
-						<YAxis
-							tickFormatter={(value) => `$${value.toFixed(2)}`}
-							tick={{ fill: "#ffffff" }}
-						/>
-						<Tooltip content={<CustomTooltip />} />
-						<Legend
-							verticalAlign="top"
-							wrapperStyle={{
-								paddingBottom: "20px",
-								color: "#ffffff",
+
+			<div className="flex flex-1 relative overflow-hidden">
+				{/* Mobile Sidebar Overlay */}
+				{isSidebarOpen && (
+					<div
+						className="fixed inset-0 bg-black/50 z-40 md:hidden"
+						onClick={() => setIsSidebarOpen(false)}
+					/>
+				)}
+
+				{/* Sidebar */}
+				<div
+					className={`
+					${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+					md:translate-x-0 md:relative
+					fixed left-0 top-0 z-50 h-full
+					transition-transform duration-300 ease-in-out
+					md:block md:flex-shrink-0
+				`}
+				>
+					<Sidebar onClose={() => setIsSidebarOpen(false)} />
+				</div>
+
+				{/* Chart Container */}
+				<div className="flex-1 h-full min-h-0">
+					<ResponsiveContainer width="100%" height="100%">
+						<BarChart
+							data={chartData}
+							margin={{
+								top: 60,
+								right: 30,
+								left: 60,
+								bottom: 120,
 							}}
-						/>
-						{(tokenFilter === "both" || tokenFilter === "input") && (
-							<Bar dataKey="Input" fill={inputColor} name="Input Cost" />
-						)}
-						{(tokenFilter === "both" || tokenFilter === "output") && (
-							<Bar dataKey="Output" fill={outputColor} name="Output Cost" />
-						)}
-					</BarChart>
-				</ResponsiveContainer>
+						>
+							<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+							<XAxis
+								dataKey="name"
+								angle={-45}
+								textAnchor="end"
+								height={100}
+								interval={0}
+								tick={{ fill: resolvedTheme === "dark" ? "white" : "black" }}
+							/>
+							<YAxis
+								tickFormatter={(value) => `$${value.toFixed(2)}`}
+								tick={{ fill: resolvedTheme === "dark" ? "white" : "black" }}
+							/>
+							<Tooltip content={<CustomTooltip />} />
+							<Legend
+								verticalAlign="top"
+								wrapperStyle={{
+									paddingBottom: "20px",
+									color: "#ffffff",
+								}}
+							/>
+							{(tokenFilter === "both" || tokenFilter === "input") && (
+								<Bar dataKey="Input" fill={inputColor} name="Input Cost" />
+							)}
+							{(tokenFilter === "both" || tokenFilter === "output") && (
+								<Bar dataKey="Output" fill={outputColor} name="Output Cost" />
+							)}
+						</BarChart>
+					</ResponsiveContainer>
+				</div>
+			</div>
+
+			{/* Footer Attribution */}
+			<div className="fixed bottom-2 right-2 text-xs text-muted-foreground max-w-xs text-right z-10 hidden md:block">
+				Made with ❤ by{" "}
+				<a
+					href="https://x.com/smrdotgg"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="hover:text-foreground transition-colors underline"
+				>
+					smrdotgg
+				</a>
+				. Heavily inspired by{" "}
+				<a
+					href="https://x.com/theo/status/1925600424822030388"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="hover:text-foreground transition-colors underline"
+				>
+					Theo's model price graph
+				</a>
+				.
 			</div>
 		</div>
 	);

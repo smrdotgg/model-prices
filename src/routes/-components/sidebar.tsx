@@ -1,13 +1,17 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
-import { List, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Route } from "..";
 import { providerByPopularity } from "./popularity";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
-export default function SideBar() {
+interface SideBarProps {
+	onClose?: () => void;
+}
+
+export default function SideBar({ onClose }: SideBarProps) {
 	const data = Route.useLoaderData();
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -31,6 +35,10 @@ export default function SideBar() {
 					: [...prev.selectedModels, compositeId],
 			}),
 		});
+		// Close sidebar on mobile after selection
+		if (onClose && window.innerWidth < 768) {
+			onClose();
+		}
 	};
 
 	const handleProviderExpand = (providerId: string) => {
@@ -55,7 +63,7 @@ export default function SideBar() {
 	};
 
 	return (
-		<div className="flex flex-col  w-80 max-w-80 h-full max-h-full  ">
+		<div className="flex flex-col w-80 max-w-80 h-full bg-background md:bg-transparent border-r md:border-r-0">
 			<ScrollArea className="h-full">
 				<div className="flex flex-col gap-2">
 					{/* Selected Models Section */}
