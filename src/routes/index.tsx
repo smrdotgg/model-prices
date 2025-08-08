@@ -78,20 +78,6 @@ export function Page() {
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 
-	// Convert API data to chart format, treating each provider-model combination as separate
-	const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
-		Object.values(provider.models).map((model) => ({
-			name: `${model.name} (${provider.name})`,
-			id: `${providerId}:${model.id}`, // Composite key: provider:model
-			modelId: model.id,
-			providerId: providerId,
-			providerName: provider.name,
-			releaseDate: new Date(model.release_date),
-			Input: (model.cost?.input || 0) * 1000000, // Convert to per million tokens
-			Output: (model.cost?.output || 0) * 1000000,
-		})),
-	);
-
 	// Get fallback models: 3 most recent from each preferred provider
 	const getFallbackModels = () => {
 		const fallbackIds: string[] = [];
@@ -114,10 +100,48 @@ export function Page() {
 		return fallbackIds;
 	};
 
-	const chartData =
-		selectedModels.length > 0
-			? allModels.filter((model) => selectedModels.includes(model.id))
-			: allModels.filter((model) => getFallbackModels().includes(model.id));
+	// If no models are selected, automatically select fallback models in URL
+	const fallbackModels = getFallbackModels();
+	const effectiveSelectedModels = selectedModels.length > 0 ? selectedModels : fallbackModels;
+	
+	// Update URL with fallback models if none are selected
+	if (selectedModels.length === 0 && fallbackModels.length > 0) {
+		navigate({
+			search: (prev) => ({ ...prev, selectedModels: fallbackModels }),
+			replace: true,
+		});
+	}
+
+	// First pass: count how many providers offer each model name
+	const modelNameCounts = new Map<string, number>();
+	Object.entries(data).forEach(([providerId, provider]) => {
+		Object.values(provider.models).forEach((model) => {
+			modelNameCounts.set(model.name, (modelNameCounts.get(model.name) || 0) + 1);
+		});
+	});
+
+	// Convert API data to chart format, treating each provider-model combination as separate
+	const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
+		Object.values(provider.models).map((model) => {
+			const isMultiProvider = (modelNameCounts.get(model.name) || 0) > 1;
+			const displayName = isMultiProvider 
+				? `${model.name} (${provider.name})`
+				: model.name;
+			
+			return {
+				name: displayName,
+				id: `${providerId}:${model.id}`, // Composite key: provider:model
+				modelId: model.id,
+				providerId: providerId,
+				providerName: provider.name,
+				releaseDate: new Date(model.release_date),
+				Input: (model.cost?.input || 0) * 1000000, // Convert to per million tokens
+				Output: (model.cost?.output || 0) * 1000000,
+			};
+		}),
+	);
+
+	const chartData = allModels.filter((model) => effectiveSelectedModels.includes(model.id));
 
 	return (
 		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
