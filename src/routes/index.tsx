@@ -261,7 +261,9 @@ export function Page() {
 				>
 					smrdotgg
 				</a>
-				. Heavily inspired by{" "}
+				.
+				<br />
+				Heavily inspired by{" "}
 				<a
 					href="https://x.com/theo/status/1925600424822030388"
 					target="_blank"
