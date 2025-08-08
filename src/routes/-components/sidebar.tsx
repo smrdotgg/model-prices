@@ -5,11 +5,13 @@ import { Route } from "..";
 import { providerByPopularity } from "./popularity";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 export default function SideBar() {
 	const data = Route.useLoaderData();
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
+	const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
 
 	const handleTokenFilterChange = (filter: 'both' | 'input' | 'output') => {
 		navigate({
@@ -26,6 +28,18 @@ export default function SideBar() {
 					? prev.selectedModels.filter(id => id !== compositeId)
 					: [...prev.selectedModels, compositeId]
 			}),
+		});
+	};
+
+	const handleProviderExpand = (providerId: string) => {
+		setExpandedProviders(prev => new Set([...prev, providerId]));
+	};
+
+	const handleProviderCollapse = (providerId: string) => {
+		setExpandedProviders(prev => {
+			const newSet = new Set(prev);
+			newSet.delete(providerId);
+			return newSet;
 		});
 	};
 
@@ -83,15 +97,17 @@ export default function SideBar() {
 							return bPopularity - aPopularity;
 						})
 						.map(([key, value]) => {
-							const mostRecentModels = Object.values(value.models)
+							const isExpanded = expandedProviders.has(key);
+							const allModels = Object.values(value.models)
 								.sort(
 									(a, b) =>
 										new Date(b.release_date).getTime() -
 										new Date(a.release_date).getTime(),
-								)
-								.slice(0, 5);
-							const remaining =
-								Object.keys(value.models).length - mostRecentModels.length;
+								);
+							
+							const displayModels = isExpanded ? allModels : allModels.slice(0, 5);
+							const remaining = allModels.length - displayModels.length;
+							
 							return (
 								<div
 									className="flex flex-col gap-2 border p-3 rounded "
@@ -99,7 +115,7 @@ export default function SideBar() {
 								>
 									<p className="text-xs">{value.name}</p>
 									<div className="flex gap-2 flex-wrap">
-										{mostRecentModels.map((model) => {
+										{displayModels.map((model) => {
 											const compositeId = `${key}:${model.id}`;
 											return (
 												<Badge 
@@ -112,9 +128,22 @@ export default function SideBar() {
 												</Badge>
 											);
 										})}
-										{!!remaining && (
-											<Badge variant={"secondary"}>
+										{!isExpanded && !!remaining && (
+											<Badge 
+												variant={"secondary"}
+												className="cursor-pointer"
+												onClick={() => handleProviderExpand(key)}
+											>
 												+{remaining} {remaining == 1 ? "Model" : "Models"}
+											</Badge>
+										)}
+										{isExpanded && (
+											<Badge 
+												variant={"secondary"}
+												className="cursor-pointer"
+												onClick={() => handleProviderCollapse(key)}
+											>
+												Collapse
 											</Badge>
 										)}
 									</div>
