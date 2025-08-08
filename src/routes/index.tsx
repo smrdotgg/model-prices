@@ -102,8 +102,9 @@ export function Page() {
 
 	// If no models are selected, automatically select fallback models in URL
 	const fallbackModels = getFallbackModels();
-	const effectiveSelectedModels = selectedModels.length > 0 ? selectedModels : fallbackModels;
-	
+	const effectiveSelectedModels =
+		selectedModels.length > 0 ? selectedModels : fallbackModels;
+
 	// Update URL with fallback models if none are selected
 	if (selectedModels.length === 0 && fallbackModels.length > 0) {
 		navigate({
@@ -116,7 +117,10 @@ export function Page() {
 	const modelNameCounts = new Map<string, number>();
 	Object.entries(data).forEach(([providerId, provider]) => {
 		Object.values(provider.models).forEach((model) => {
-			modelNameCounts.set(model.name, (modelNameCounts.get(model.name) || 0) + 1);
+			modelNameCounts.set(
+				model.name,
+				(modelNameCounts.get(model.name) || 0) + 1,
+			);
 		});
 	});
 
@@ -124,10 +128,10 @@ export function Page() {
 	const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
 		Object.values(provider.models).map((model) => {
 			const isMultiProvider = (modelNameCounts.get(model.name) || 0) > 1;
-			const displayName = isMultiProvider 
-				? `${model.name} (${provider.name})`
+			const displayName = isMultiProvider
+				? model.name + "\n(" + provider.name + ")"
 				: model.name;
-			
+
 			return {
 				name: displayName,
 				id: `${providerId}:${model.id}`, // Composite key: provider:model
@@ -135,13 +139,27 @@ export function Page() {
 				providerId: providerId,
 				providerName: provider.name,
 				releaseDate: new Date(model.release_date),
-				Input: (model.cost?.input || 0) * 1000000, // Convert to per million tokens
-				Output: (model.cost?.output || 0) * 1000000,
+				Input: model.cost?.input || 0, // Convert to per million tokens
+				Output: model.cost?.output || 0,
 			};
 		}),
 	);
 
-	const chartData = allModels.filter((model) => effectiveSelectedModels.includes(model.id));
+	// Filter and sort chart data based on token filter
+	const filteredModels = allModels.filter((model) =>
+		effectiveSelectedModels.includes(model.id),
+	);
+	
+	const chartData = filteredModels.sort((a, b) => {
+		if (tokenFilter === 'input') {
+			return a.Input - b.Input; // Sort by input cost ascending
+		} else if (tokenFilter === 'output') {
+			return a.Output - b.Output; // Sort by output cost ascending
+		} else {
+			// tokenFilter === 'both' - sort by sum of input + output
+			return (a.Input + a.Output) - (b.Input + b.Output);
+		}
+	});
 
 	return (
 		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
