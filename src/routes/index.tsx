@@ -11,18 +11,33 @@ import {
 	ResponsiveContainer,
 } from "recharts";
 import { ModeToggle } from "@/components/theme-toggle";
+import * as v from "valibot";
 import { List } from "lucide-react";
 import Sidebar from "./-components/sidebar";
 import { useState } from "react";
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import logo from "../logo.svg";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { useBarGraphColors } from "./-components/use-bargarph-colors";
+import type { ProvidersConfig } from "./-components/data-type";
 
+const LoginSchema = v.object({});
 export const Route = createFileRoute("/")({
 	component: Page,
+	validateSearch: LoginSchema,
+	loader: () => {
+		return fetch(
+			"https://square-bread-9f82.se-semere-tereffe.workers.dev/",
+		).then((r) => {
+			if (!r.ok) {
+				throw new Error(r.statusText);
+			} else {
+				return r.json() as Promise<ProvidersConfig>;
+			}
+		});
+	},
 });
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -41,8 +56,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 	return null;
 };
 export function Page() {
+	const data = Route.useLoaderData();
 	const [displayMode, setDisplayMode] = useState<string>("both");
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
+
+	const searchParams = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+
 	const chartData = [
 		{ name: "gpt-4o", Input: 0.002, Output: 0.004 },
 		{ name: "gpt-4o-mini", Input: 0.001, Output: 0.002 },
@@ -57,11 +77,11 @@ export function Page() {
 	].map((e) => ({ ...e, Input: e.Input * 1000, Output: e.Output * 1000 }));
 
 	return (
-		<div className="bg-background  h-screen w-screen flex flex-col overflow-y-auto p-3">
+		<div className="bg-background max-h-[98vh] h-screen w-screen flex flex-col  p-3">
 			<div className="flex justify-end">
 				<ModeToggle />
 			</div>
-			<div className="flex flex-1 bg-0">
+			<div className="flex flex-1 bg-0 h-full max-h-full ">
 				<Sidebar />
 				<ResponsiveContainer width="100%" height="100%" className={"min-h-80"}>
 					<BarChart
