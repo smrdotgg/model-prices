@@ -64,6 +64,26 @@ export default function SideBar({ onClose }: SideBarProps) {
 		});
 	};
 
+	// Get 5 newest models across all providers
+	const getLatestReleases = () => {
+		const allModels = Object.entries(data).flatMap(([providerId, provider]) =>
+			Object.values(provider.models).map((model) => ({
+				...model,
+				providerId,
+				providerName: provider.name,
+				compositeId: `${providerId}:${model.id}`,
+			})),
+		);
+
+		return allModels
+			.sort(
+				(a, b) =>
+					new Date(b.release_date).getTime() -
+					new Date(a.release_date).getTime(),
+			)
+			.slice(0, 5);
+	};
+
 	return (
 		<div className="flex flex-col w-80 max-w-80 h-full bg-background md:bg-transparent border-r md:border-r-0">
 			<ScrollArea className="h-full">
@@ -124,9 +144,31 @@ export default function SideBar({ onClose }: SideBarProps) {
 						</div>
 					</div>
 
+					{/* Latest Releases Section */}
+					<div className="flex flex-col gap-2 border p-3 rounded">
+						<p className="text-xs">Latest Releases</p>
+						<div className="flex gap-2 flex-wrap">
+							{getLatestReleases().map((model) => (
+								<Badge
+									key={model.compositeId}
+									variant={
+										selectedModels.includes(model.compositeId)
+											? "default"
+											: "outline"
+									}
+									className="cursor-pointer flex items-center gap-1"
+									onClick={() => handleModelToggle(model.providerId, model.id)}
+								>
+									{model.reasoning && <Brain className="w-3 h-3" />}
+									{model.providerName}/{model.name}
+								</Badge>
+							))}
+						</div>
+					</div>
+
 					<div className="flex flex-col gap-2 border p-3 rounded ">
 						<div className="flex justify-between *:my-auto">
-							<p className="text-xs">Latest Models</p>
+							<p className="text-xs">All Models</p>
 							{/* <Badge variant={"secondary"} className="cursor-pointer"> */}
 							{/* 	<List className="w-4 h-4" /> */}
 							{/* 	Full model list */}
