@@ -14,7 +14,7 @@ import { ModeToggle } from "@/components/theme-toggle";
 import * as v from "valibot";
 import { List, Menu, Brain } from "lucide-react";
 import Sidebar from "./-components/sidebar";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useState, useEffect } from "react";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import logo from "../logo.svg";
@@ -85,6 +85,14 @@ export function Page() {
 	const { tokenFilter, selectedModels } = useDeferredValue(searchParams);
 	const navigate = useNavigate({ from: Route.fullPath });
 
+	// Save current state to localStorage whenever it changes
+	useEffect(() => {
+		if (selectedModels.length > 0 || tokenFilter !== 'both') {
+			const state = { tokenFilter, selectedModels };
+			localStorage.setItem('model-prices-state', JSON.stringify(state));
+		}
+	}, [tokenFilter, selectedModels]);
+
 	// Get fallback models: 3 most recent from each preferred provider
 	const getFallbackModels = () => {
 		const fallbackIds: string[] = [];
@@ -107,17 +115,55 @@ export function Page() {
 		return fallbackIds;
 	};
 
-	// If no models are selected, automatically select fallback models in URL
-	const fallbackModels = getFallbackModels();
+	// Get fallback from localStorage or default models
+	const getEffectiveFallback = () => {
+		// First try localStorage
+		try {
+			const saved = localStorage.getItem('model-prices-state');
+			if (saved) {
+				const parsedState = JSON.parse(saved);
+				if (parsedState.selectedModels && parsedState.selectedModels.length > 0) {
+					return parsedState.selectedModels;
+				}
+			}
+		} catch (error) {
+			console.warn('Failed to parse localStorage state:', error);
+		}
+		
+		// Fall back to default models
+		return getFallbackModels();
+	};
+
+	const fallbackModels = getEffectiveFallback();
 	const effectiveSelectedModels =
 		selectedModels.length > 0 ? selectedModels : fallbackModels;
 
 	// Update URL with fallback models if none are selected
 	if (selectedModels.length === 0 && fallbackModels.length > 0) {
-		navigate({
-			search: (prev) => ({ ...prev, selectedModels: fallbackModels }),
-			replace: true,
-		});
+		// Also restore tokenFilter from localStorage if available
+		try {
+			const saved = localStorage.getItem('model-prices-state');
+			if (saved) {
+				const parsedState = JSON.parse(saved);
+				navigate({
+					search: (prev) => ({ 
+						tokenFilter: parsedState.tokenFilter || prev.tokenFilter,
+						selectedModels: fallbackModels 
+					}),
+					replace: true,
+				});
+			} else {
+				navigate({
+					search: (prev) => ({ ...prev, selectedModels: fallbackModels }),
+					replace: true,
+				});
+			}
+		} catch (error) {
+			navigate({
+				search: (prev) => ({ ...prev, selectedModels: fallbackModels }),
+				replace: true,
+			});
+		}
 	}
 
 	// First pass: count how many providers offer each model name
