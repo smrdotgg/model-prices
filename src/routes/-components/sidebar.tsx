@@ -5,14 +5,15 @@ import { Route } from "..";
 import { providerByPopularity } from "./popularity";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 
 interface SideBarProps {
 	onClose?: () => void;
 }
 
 export default function SideBar({ onClose }: SideBarProps) {
-	const data = Route.useLoaderData();
+	const immediateData = Route.useLoaderData();
+	const data = useDeferredValue(immediateData);
 	const { tokenFilter, selectedModels } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const [expandedProviders, setExpandedProviders] = useState<Set<string>>(

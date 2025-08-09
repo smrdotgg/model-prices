@@ -14,7 +14,7 @@ import { ModeToggle } from "@/components/theme-toggle";
 import * as v from "valibot";
 import { List, Menu, Brain } from "lucide-react";
 import Sidebar from "./-components/sidebar";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import logo from "../logo.svg";
@@ -75,7 +75,8 @@ const PREFERRED_PROVIDERS = [
 ];
 
 export function Page() {
-	const data = Route.useLoaderData();
+	const immediateData = Route.useLoaderData();
+	const data = useDeferredValue(immediateData);
 	const resolvedTheme = useResolvedTheme();
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
