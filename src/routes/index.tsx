@@ -260,7 +260,7 @@ export function Page() {
 					rel="noopener noreferrer"
 					className="hover:text-foreground transition-colors underline"
 				>
-					smrdotgg
+					smr
 				</a>
 				.
 				<br />
