@@ -14,7 +14,8 @@ interface SideBarProps {
 export default function SideBar({ onClose }: SideBarProps) {
 	const immediateData = Route.useLoaderData();
 	const data = useDeferredValue(immediateData);
-	const { tokenFilter, selectedModels } = Route.useSearch();
+	const searchParams = Route.useSearch();
+	const { tokenFilter, selectedModels } = useDeferredValue(searchParams);
 	const navigate = useNavigate({ from: Route.fullPath });
 	const [expandedProviders, setExpandedProviders] = useState<Set<string>>(
 		new Set(),

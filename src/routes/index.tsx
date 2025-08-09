@@ -81,7 +81,8 @@ export function Page() {
 	const { input: inputColor, output: outputColor } = useBarGraphColors();
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-	const { tokenFilter, selectedModels } = Route.useSearch();
+	const searchParams = Route.useSearch();
+	const { tokenFilter, selectedModels } = useDeferredValue(searchParams);
 	const navigate = useNavigate({ from: Route.fullPath });
 
 	// Get fallback models: 3 most recent from each preferred provider
